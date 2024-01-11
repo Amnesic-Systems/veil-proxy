@@ -23,12 +23,12 @@ type ifReq struct {
 
 // SetupTunAsProxy configures the tun device to be used as a proxy.
 func SetupTunAsProxy() error {
-	return configureTun(isProxy)
+	return setupTun(isProxy)
 }
 
 // SetupTunAsEnclave configures the tun device to be used as an enclave.
 func SetupTunAsEnclave() error {
-	return configureTun(isEnclave)
+	return setupTun(isEnclave)
 }
 
 // setupTun configures our tun device. The function assigns an IP address and
@@ -74,7 +74,6 @@ func CreateTun() (*os.File, error) {
 		return nil, err
 	}
 
-	var ifr ifReq
 	ifr := ifReq{
 		Flags: unix.IFF_TUN | unix.IFF_NO_PI,
 	}
