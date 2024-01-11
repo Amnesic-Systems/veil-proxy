@@ -1,30 +1,28 @@
-package main
+package proxy
 
 import "github.com/coreos/go-iptables/iptables"
 
 const (
-	on  = true
-	off = false
+	On  = true
+	Off = false
 )
 
-var (
-	iptablesRules = [][]string{
+// ToggleNAT toggles our iptables NAT rules, which ensure that the enclave can
+// talk to the Internet.
+func ToggleNAT(toggle bool) error {
+	var iptablesRules = [][]string{
 		{"nat", "POSTROUTING", "-s", "10.0.0.0/24", "-j", "MASQUERADE"},
 		{"filter", "FORWARD", "-i", TunName, "-s", "10.0.0.0/24", "-j", "ACCEPT"},
 		{"filter", "FORWARD", "-o", TunName, "-d", "10.0.0.0/24", "-j", "ACCEPT"},
 	}
-)
 
-// toggleNAT toggles our iptables NAT rules, which ensure that the enclave can
-// talk to the Internet.
-func toggleNAT(toggle bool) error {
 	t, err := iptables.New()
 	if err != nil {
 		return err
 	}
 
 	f := t.AppendUnique
-	if toggle == off {
+	if toggle == Off {
 		f = t.DeleteIfExists
 	}
 

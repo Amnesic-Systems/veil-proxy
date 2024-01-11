@@ -1,8 +1,8 @@
 prog = nitriding-proxy
-deps = *.go go.mod go.sum Makefile
+deps = cmd/*.go *.go go.mod go.sum Makefile
 
 $(prog): $(deps)
-	go build -o $(prog)
+	go build -C cmd/ -o ../$(prog)
 
 .PHONY: clean
 clean:

@@ -1,4 +1,4 @@
-package main
+package proxy
 
 import (
 	"fmt"
@@ -75,17 +75,13 @@ func openTun() (*os.File, error) {
 	return os.NewFile(uintptr(tunfd), "/dev/net/tun"), nil
 }
 
-func createTun() *os.File {
+// CreateTun creates a new tun device and returns its file descriptor.
+func CreateTun() *os.File {
 	tun, err := openTun()
 	if err != nil {
 		l.Fatalf("Error opening tun device: %v", err)
 	}
 	l.Println("Opened tun file descriptor.")
-
-	if err := toggleNAT(on); err != nil {
-		l.Fatalf("Error setting up NAT: %v", err)
-	}
-	l.Println("Enabled NAT.")
 
 	if err := configureTun(); err != nil {
 		l.Fatalf("Error configuring tun device: %v", err)
