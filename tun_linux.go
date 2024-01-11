@@ -10,29 +10,55 @@ import (
 	"golang.org/x/sys/unix"
 )
 
+const (
+	isEnclave = iota
+	isProxy
+)
+
 type ifReq struct {
 	Name  [0x10]byte
 	Flags uint16
 	pad   [0x28 - 0x10 - 2]byte
 }
 
-// configureTun configures our tun device.  The function assigns an IP address
-// and sets the link MTU, after which the device is ready to work.
-func configureTun() error {
+// SetupTunAsProxy configures the tun device to be used as a proxy.
+func SetupTunAsProxy() error {
+	return configureTun(isProxy)
+}
+
+// SetupTunAsEnclave configures the tun device to be used as an enclave.
+func SetupTunAsEnclave() error {
+	return configureTun(isEnclave)
+}
+
+// setupTun configures our tun device. The function assigns an IP address and
+// sets the link MTU, after which the device is ready to work.
+func setupTun(typ int) error {
+	cidrStr := "10.0.0.1/24"
+	if typ == isEnclave {
+		cidrStr = "10.0.0.2/24"
+	}
+
 	link, err := tenus.NewLinkFrom(TunName)
 	if err != nil {
 		return fmt.Errorf("failed to retrieve link: %w", err)
 	}
-
-	addr, network, err := net.ParseCIDR("10.0.0.1/24")
+	cidr, network, err := net.ParseCIDR(cidrStr)
 	if err != nil {
 		return fmt.Errorf("failed to parse CIDR: %w", err)
 	}
-	if err = link.SetLinkIp(addr, network); err != nil {
+	if err = link.SetLinkIp(cidr, network); err != nil {
 		return fmt.Errorf("failed to set link address: %w", err)
 	}
 	if err := link.SetLinkMTU(TunMTU); err != nil {
 		return fmt.Errorf("failed to set link MTU: %w", err)
+	}
+	// Set the enclave's default gateway to the proxy's IP address.
+	if typ == isEnclave {
+		gw := net.ParseIP("10.0.0.1")
+		if err := link.SetLinkDefaultGw(&gw); err != nil {
+			return fmt.Errorf("failed to set default gateway: %w", err)
+		}
 	}
 	if err := link.SetLinkUp(); err != nil {
 		return fmt.Errorf("failed to bring up link: %w", err)
@@ -41,26 +67,19 @@ func configureTun() error {
 	return nil
 }
 
-// openTun returns a ready-to-use file descriptor for our tun interface.  This
-// code was taken in part from:
-// https://github.com/golang/go/issues/30426#issuecomment-470335255
-func openTun() (*os.File, error) {
+// CreateTun returns a ready-to-use file descriptor for our tun interface.
+func CreateTun() (*os.File, error) {
 	tunfd, err := unix.Open("/dev/net/tun", os.O_RDWR, 0)
 	if err != nil {
 		return nil, err
 	}
 
 	var ifr ifReq
-	// We want a tun interface and we want multiqueue support, i.e., we
-	// want multiple file descriptors to parallelize packet processing.
-	//
-	// Note that packet information is enabled, i.e., the tun driver is
-	// going to prepend the network protocol number.  It is crucial that
-	// packet information is enabled for both this proxy *and* the
-	// cooperating proxy inside the enclave.  A mismatch is going to break
-	// the communication channel.
-	ifr.Flags = unix.IFF_TUN | unix.IFF_NO_PI
+	ifr := ifReq{
+		Flags: unix.IFF_TUN | unix.IFF_NO_PI,
+	}
 	copy(ifr.Name[:], TunName)
+
 	_, _, errno := unix.Syscall(
 		unix.SYS_IOCTL,
 		uintptr(tunfd),
@@ -73,20 +92,4 @@ func openTun() (*os.File, error) {
 	unix.SetNonblock(tunfd, true)
 
 	return os.NewFile(uintptr(tunfd), "/dev/net/tun"), nil
-}
-
-// CreateTun creates a new tun device and returns its file descriptor.
-func CreateTun() *os.File {
-	tun, err := openTun()
-	if err != nil {
-		l.Fatalf("Error opening tun device: %v", err)
-	}
-	l.Println("Opened tun file descriptor.")
-
-	if err := configureTun(); err != nil {
-		l.Fatalf("Error configuring tun device: %v", err)
-	}
-	l.Println("Configured tun device.")
-
-	return tun
 }

@@ -73,6 +73,7 @@ func main() {
 		vsockPort uint
 		ln        net.Listener
 		tun       *os.File
+		err       error
 	)
 
 	flag.BoolVar(&profile, "profile", false, "Enable profiling.")
@@ -90,9 +91,14 @@ func main() {
 
 	// Set up a file descriptor for the "left" side of the proxy, i.e., a tun
 	// device that handles the enclave's traffic.
-	tun = proxy.CreateTun()
+	tun, err = proxy.CreateTun()
+	if err != nil {
+		l.Fatalf("Error creating tun device: %v", err)
+	}
 	defer tun.Close()
-
+	if err = proxy.SetupTunAsProxy(); err != nil {
+		l.Fatalf("Error configuring tun device: %v", err)
+	}
 	if err := proxy.ToggleNAT(proxy.On); err != nil {
 		l.Fatalf("Error setting up NAT: %v", err)
 	}
