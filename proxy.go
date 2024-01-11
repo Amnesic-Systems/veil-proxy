@@ -9,9 +9,10 @@ import (
 )
 
 const (
-	LenBufSize = 2
-	TunMTU     = 65535 // The maximum-allowed MTU for the tun interface.
-	TunName    = "tun0"
+	LenBufSize  = 2
+	TunMTU      = 65535 // The maximum-allowed MTU for the tun interface.
+	TunName     = "tun0"
+	DefaultPort = 1024
 )
 
 var l = log.New(

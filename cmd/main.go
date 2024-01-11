@@ -76,7 +76,7 @@ func main() {
 	)
 
 	flag.BoolVar(&profile, "profile", false, "Enable profiling.")
-	flag.UintVar(&vsockPort, "port", 1024, "VSOCK forwarding port that the enclave connects to.")
+	flag.UintVar(&vsockPort, "port", proxy.DefaultPort, "VSOCK forwarding port that the enclave connects to.")
 	flag.Parse()
 
 	if vsockPort < 1 || vsockPort > math.MaxUint32 {
