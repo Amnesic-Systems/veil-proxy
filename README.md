@@ -14,13 +14,9 @@ The diagram above illustrates the architecture. The yellow components are under 
 
 ## Usage
 
-Compile nitriding-proxy by running:
+Compile and run nitriding-proxy by running:
 ```
-make
-```
-Start nitriding-proxy on the EC2 host by running:
-```
-sudo ./nitriding-proxy
+make run
 ```
 
 ## Performance
