@@ -6,6 +6,7 @@ import (
 	"io"
 	"log"
 	"os"
+	"sync"
 )
 
 const (
@@ -25,8 +26,9 @@ var l = log.New(
 // TCP-over-VSOCK connection. The function keeps on forwarding packets until we
 // encounter an error or EOF. Errors (including EOF) are written to the given
 // channel.
-func TunToVsock(from io.Reader, to io.WriteCloser, ch chan error) {
+func TunToVsock(from io.Reader, to io.WriteCloser, ch chan error, wg *sync.WaitGroup) {
 	defer to.Close()
+	defer wg.Done()
 	var (
 		err       error
 		pktLenBuf = make([]byte, LenBufSize)
@@ -49,14 +51,16 @@ func TunToVsock(from io.Reader, to io.WriteCloser, ch chan error) {
 			break
 		}
 	}
-	ch <- fmt.Errorf("stopped tun-to-vsock forwarding because: %v", err)
+	ch <- fmt.Errorf("Stopped tun-to-vsock forwarding: %v", err)
 }
 
 // VsockToTun forwards network packets from our TCP-over-VSOCK connection to
 // the tun interface. The function keeps on forwarding packets until we
 // encounter an error or EOF. Errors (including EOF) are written to the given
 // channel.
-func VsockToTun(from io.Reader, to io.Writer, ch chan error) {
+func VsockToTun(from io.Reader, to io.WriteCloser, ch chan error, wg *sync.WaitGroup) {
+	defer to.Close()
+	defer wg.Done()
 	var (
 		err       error
 		pktLen    uint16
@@ -78,9 +82,9 @@ func VsockToTun(from io.Reader, to io.Writer, ch chan error) {
 		}
 
 		// Forward the packet to the tun interface.
-		if _, err := to.Write(pktBuf[:pktLen]); err != nil {
+		if _, err = to.Write(pktBuf[:pktLen]); err != nil {
 			break
 		}
 	}
-	ch <- fmt.Errorf("stopped vsock-to-tun forwarding because: %v", err)
+	ch <- fmt.Errorf("Stopped vsock-to-tun forwarding: %v", err)
 }

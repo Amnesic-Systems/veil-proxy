@@ -8,6 +8,7 @@ import (
 	"net/http"
 	_ "net/http/pprof"
 	"os"
+	"sync"
 
 	proxy "github.com/Amnesic-Systems/nitriding-proxy"
 	"github.com/mdlayher/vsock"
@@ -39,9 +40,15 @@ func listenVSOCK(port uint32) net.Listener {
 	return ln
 }
 
-func acceptLoop(ln net.Listener, tun *os.File) {
-	ch := make(chan error)
+func acceptLoop(ln net.Listener) {
+	var (
+		err error
+		wg  sync.WaitGroup
+		tun *os.File
+		ch  = make(chan error)
+	)
 	defer close(ch)
+	defer tun.Close()
 
 	// Print errors that occur while forwarding packets.
 	go func(ch chan error) {
@@ -52,59 +59,57 @@ func acceptLoop(ln net.Listener, tun *os.File) {
 
 	// Listen for connections from the enclave and begin forwarding packets
 	// once a new connection is established. At any given point, we only expect
-	// to have a single TCP-over-VSOCK connection with the enclave
+	// to have a single TCP-over-VSOCK connection with the enclave.
 	for {
+		tun, err = proxy.SetupTunAsProxy()
+		if err != nil {
+			l.Printf("Error creating tun device: %v", err)
+			continue
+		}
+		l.Print("Created tun device.")
+
 		l.Println("Waiting for new connection from enclave.")
 		vm, err := ln.Accept()
 		if err != nil {
-			l.Printf("Failed to accept connection: %v", err)
-			break
+			l.Printf("Error accepting connection: %v", err)
+			continue
 		}
 		l.Printf("Accepted new connection from %s.", vm.RemoteAddr())
 
-		go proxy.VsockToTun(vm, tun, ch)
-		go proxy.TunToVsock(tun, vm, ch)
+		wg.Add(2)
+		go proxy.VsockToTun(vm, tun, ch, &wg)
+		go proxy.TunToVsock(tun, vm, ch, &wg)
+		wg.Wait()
 	}
 }
 
 func main() {
 	var (
-		profile   bool
-		vsockPort uint
-		ln        net.Listener
-		tun       *os.File
-		err       error
+		profile bool
+		port    uint64
+		ln      net.Listener
 	)
 
-	flag.BoolVar(&profile, "profile", false, "Enable profiling.")
-	flag.UintVar(&vsockPort, "port", proxy.DefaultPort, "VSOCK forwarding port that the enclave connects to.")
+	flag.BoolVar(
+		&profile, "profile",
+		false,
+		"Enable profiling.",
+	)
+	flag.Uint64Var(
+		&port, "port",
+		proxy.DefaultPort,
+		"VSOCK port that the enclave connects to.",
+	)
 	flag.Parse()
 
-	if vsockPort < 1 || vsockPort > math.MaxUint32 {
+	if port < 1 || port > math.MaxUint32 {
 		l.Fatalf("Flag -port must be in interval [1, %d].", math.MaxUint32)
 	}
 
-	// Set up a VSOCK listener for the "right" side of the proxy, i.e., the
-	// side facing the enclave.
-	ln = listenVSOCK(uint32(vsockPort))
+	ln = listenVSOCK(uint32(port))
 	defer ln.Close()
 
-	// Set up a file descriptor for the "left" side of the proxy, i.e., a tun
-	// device that handles the enclave's traffic.
-	tun, err = proxy.CreateTun()
-	if err != nil {
-		l.Fatalf("Error creating tun device: %v", err)
-	}
-	defer tun.Close()
-	if err = proxy.SetupTunAsProxy(); err != nil {
-		l.Fatalf("Error configuring tun device: %v", err)
-	}
-	if err := proxy.ToggleNAT(proxy.On); err != nil {
-		l.Fatalf("Error setting up NAT: %v", err)
-	}
-	defer proxy.ToggleNAT(proxy.Off)
-
-	// If desired: set up a Web server for the profiler.
+	// If desired, set up a Web server for the profiler.
 	if profile {
 		go func() {
 			const hostPort = "localhost:6060"
@@ -113,5 +118,5 @@ func main() {
 		}()
 	}
 
-	acceptLoop(ln, tun)
+	acceptLoop(ln)
 }
