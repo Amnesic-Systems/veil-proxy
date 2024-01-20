@@ -1,5 +1,7 @@
 # nitriding-proxy
 
+[![GoDoc](https://pkg.go.dev/badge/github.com/Amnesic-Systems/nitriding-proxy)](https://pkg.go.dev/github.com/Amnesic-Systems/nitriding-proxy)
+
 Nitriding-proxy tunnels network traffic between
 [nitriding](https://github.com/Amnesic-Systems/nitriding)
 and the Internet by creating a tun-based
