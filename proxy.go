@@ -4,8 +4,6 @@ import (
 	"encoding/binary"
 	"fmt"
 	"io"
-	"log"
-	"os"
 	"sync"
 )
 
@@ -14,12 +12,6 @@ const (
 	TunMTU      = 65535 // The maximum-allowed MTU for the tun interface.
 	TunName     = "tun0"
 	DefaultPort = 1024
-)
-
-var l = log.New(
-	os.Stderr,
-	"nitriding-proxy: ",
-	log.Ldate|log.Ltime|log.LUTC|log.Lshortfile,
 )
 
 // TunToVsock forwards network packets from the tun device to our
@@ -51,7 +43,7 @@ func TunToVsock(from io.Reader, to io.WriteCloser, ch chan error, wg *sync.WaitG
 			break
 		}
 	}
-	ch <- fmt.Errorf("Stopped tun-to-vsock forwarding: %v", err)
+	ch <- fmt.Errorf("stopped tun-to-vsock forwarding: %v", err)
 }
 
 // VsockToTun forwards network packets from our TCP-over-VSOCK connection to
@@ -86,5 +78,5 @@ func VsockToTun(from io.Reader, to io.WriteCloser, ch chan error, wg *sync.WaitG
 			break
 		}
 	}
-	ch <- fmt.Errorf("Stopped vsock-to-tun forwarding: %v", err)
+	ch <- fmt.Errorf("stopped vsock-to-tun forwarding: %v", err)
 }
