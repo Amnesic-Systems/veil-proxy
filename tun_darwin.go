@@ -8,14 +8,10 @@ import (
 // implementing the following functions.
 const err = "not implemented on darwin"
 
-func SetupTunAsProxy() error {
+func SetupTunAsProxy() (*os.File, error) {
 	panic(err)
 }
 
-func SetupTunAsEnclave() error {
-	panic(err)
-}
-
-func CreateTun() (*os.File, error) {
+func SetupTunAsEnclave() (*os.File, error) {
 	panic(err)
 }
