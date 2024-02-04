@@ -4,8 +4,6 @@ import (
 	"encoding/binary"
 	"fmt"
 	"io"
-	"log"
-	"os"
 	"sync"
 )
 
@@ -14,12 +12,6 @@ const (
 	TunMTU      = 65535 // The maximum-allowed MTU for the tun interface.
 	TunName     = "tun0"
 	DefaultPort = 1024
-)
-
-var l = log.New(
-	os.Stderr,
-	"nitriding-proxy: ",
-	log.Ldate|log.Ltime|log.LUTC|log.Lshortfile,
 )
 
 // TunToVsock forwards network packets from the tun device to our
