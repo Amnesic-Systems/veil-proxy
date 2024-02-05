@@ -43,7 +43,7 @@ func TunToVsock(from io.Reader, to io.WriteCloser, ch chan error, wg *sync.WaitG
 			break
 		}
 	}
-	ch <- fmt.Errorf("stopped tun-to-vsock forwarding: %v", err)
+	ch <- fmt.Errorf("stopped tun-to-vsock forwarding: %w", err)
 }
 
 // VsockToTun forwards network packets from our TCP-over-VSOCK connection to
@@ -78,5 +78,5 @@ func VsockToTun(from io.Reader, to io.WriteCloser, ch chan error, wg *sync.WaitG
 			break
 		}
 	}
-	ch <- fmt.Errorf("stopped vsock-to-tun forwarding: %v", err)
+	ch <- fmt.Errorf("stopped vsock-to-tun forwarding: %w", err)
 }
