@@ -58,7 +58,7 @@ func createTun() (*os.File, error) {
 	ifr := ifReq{
 		Flags: unix.IFF_TUN | unix.IFF_NO_PI,
 	}
-	copy(ifr.Name[:], TunName)
+	copy(ifr.Name[:], tunName)
 
 	_, _, errno := unix.Syscall(
 		unix.SYS_IOCTL,
@@ -83,7 +83,7 @@ func configureTun(typ int) error {
 		cidrStr = "10.0.0.2/24"
 	}
 
-	link, err := tenus.NewLinkFrom(TunName)
+	link, err := tenus.NewLinkFrom(tunName)
 	if err != nil {
 		return fmt.Errorf("failed to retrieve link: %w", err)
 	}
@@ -94,7 +94,7 @@ func configureTun(typ int) error {
 	if err = link.SetLinkIp(cidr, network); err != nil {
 		return fmt.Errorf("failed to set link address: %w", err)
 	}
-	if err := link.SetLinkMTU(TunMTU); err != nil {
+	if err := link.SetLinkMTU(tunMTU); err != nil {
 		return fmt.Errorf("failed to set link MTU: %w", err)
 	}
 	// Set the enclave's default gateway to the proxy's IP address.
