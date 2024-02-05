@@ -8,9 +8,9 @@ import (
 )
 
 const (
-	LenBufSize  = 2
-	TunMTU      = 65535 // The maximum-allowed MTU for the tun interface.
-	TunName     = "tun0"
+	lenBufSize  = 2
+	tunMTU      = 65535 // The maximum-allowed MTU for the tun interface.
+	tunName     = "tun0"
 	DefaultPort = 1024
 )
 
@@ -23,8 +23,8 @@ func TunToVsock(from io.Reader, to io.WriteCloser, ch chan error, wg *sync.WaitG
 	defer wg.Done()
 	var (
 		err       error
-		pktLenBuf = make([]byte, LenBufSize)
-		pktBuf    = make([]byte, TunMTU)
+		pktLenBuf = make([]byte, lenBufSize)
+		pktBuf    = make([]byte, tunMTU)
 	)
 
 	for {
@@ -43,7 +43,7 @@ func TunToVsock(from io.Reader, to io.WriteCloser, ch chan error, wg *sync.WaitG
 			break
 		}
 	}
-	ch <- fmt.Errorf("stopped tun-to-vsock forwarding: %v", err)
+	ch <- fmt.Errorf("stopped tun-to-vsock forwarding: %w", err)
 }
 
 // VsockToTun forwards network packets from our TCP-over-VSOCK connection to
@@ -56,8 +56,8 @@ func VsockToTun(from io.Reader, to io.WriteCloser, ch chan error, wg *sync.WaitG
 	var (
 		err       error
 		pktLen    uint16
-		pktLenBuf = make([]byte, LenBufSize)
-		pktBuf    = make([]byte, TunMTU)
+		pktLenBuf = make([]byte, lenBufSize)
+		pktBuf    = make([]byte, tunMTU)
 	)
 
 	for {
@@ -78,5 +78,5 @@ func VsockToTun(from io.Reader, to io.WriteCloser, ch chan error, wg *sync.WaitG
 			break
 		}
 	}
-	ch <- fmt.Errorf("stopped vsock-to-tun forwarding: %v", err)
+	ch <- fmt.Errorf("stopped vsock-to-tun forwarding: %w", err)
 }
