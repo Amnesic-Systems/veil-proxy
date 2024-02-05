@@ -2,6 +2,8 @@ package proxy
 
 import (
 	"bytes"
+	"crypto/rand"
+	"errors"
 	"io"
 	"net"
 	"sync"
@@ -15,43 +17,45 @@ func assertEq(t *testing.T, is, should interface{}) {
 	}
 }
 
+// buffer implements io.ReadWriteCloser.
+type buffer struct {
+	*bytes.Buffer
+}
+
+func (b *buffer) Close() error {
+	return nil
+}
+
 func TestAToB(t *testing.T) {
 	var (
-		wg         sync.WaitGroup
-		tun, vsock = net.Pipe()
-		ch         = make(chan error)
-		send       = []byte("hello world")
-		recv       = make([]byte, len(send))
+		err          error
+		wg           sync.WaitGroup
+		ch           = make(chan error)
+		conn1, conn2 = net.Pipe()
+		sendBuf      = make([]byte, tunMTU*2)
+		recvBuf      = &buffer{
+			Buffer: new(bytes.Buffer),
+		}
 	)
 
-	wg.Add(2)
-	go TunToVsock(tun, vsock, ch, &wg)
-	go VsockToTun(vsock, tun, ch, &wg)
-	defer wg.Wait()
-
-	// Read but ignore errors.
-	go func(chan error) {
-		for range ch {
+	// We only expect to see errors containing io.EOF.
+	go func() {
+		for err := range ch {
+			assertEq(t, errors.Is(err, io.EOF), true)
 		}
-	}(ch)
+	}()
 
-	// Echo data back to sender.
-	go func(t *testing.T, expected int) {
-		nw, err := io.Copy(vsock, vsock)
-		assertEq(t, err, nil)
-		assertEq(t, nw, int64(expected))
-	}(t, len(send))
-
-	nw, err := tun.Write(send)
-	assertEq(t, nw, len(send))
+	// Fill sendBuf with random data.
+	_, err = rand.Read(sendBuf)
 	assertEq(t, err, nil)
 
-	nr, err := tun.Read(recv)
-	assertEq(t, err, nil)
-	assertEq(t, nr, len(send))
+	wg.Add(2)
+	go TunToVsock(bytes.NewReader(sendBuf), conn1, ch, &wg)
+	go VsockToTun(conn2, recvBuf, ch, &wg)
+	wg.Wait()
 
-	err = tun.Close()
-	assertEq(t, err, nil)
-
-	assertEq(t, bytes.Compare(send, recv), 0)
+	assertEq(t, bytes.Equal(
+		sendBuf,
+		recvBuf.Bytes(),
+	), true)
 }
