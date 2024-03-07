@@ -8,6 +8,8 @@ import (
 	"net"
 	"sync"
 	"testing"
+
+	"golang.org/x/net/nettest"
 )
 
 func assertEq(t *testing.T, is, should interface{}) {
@@ -24,6 +26,22 @@ type buffer struct {
 
 func (b *buffer) Close() error {
 	return nil
+}
+
+func TestNettest(t *testing.T) {
+	mkPipe := func() (c1, c2 net.Conn, stop func(), err error) {
+		var (
+			in, out    = net.Pipe()
+			fwd1, fwd2 = net.Pipe()
+			wg         = sync.WaitGroup{}
+			ch         = make(chan error)
+		)
+		wg.Add(2)
+		go TunToVsock(in, fwd1, ch, &wg)
+		go VsockToTun(fwd2, out, ch, &wg)
+		return in, out, func() {}, nil
+	}
+	nettest.TestConn(t, nettest.MakePipe(mkPipe))
 }
 
 func TestAToB(t *testing.T) {
