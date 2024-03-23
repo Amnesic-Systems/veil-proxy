@@ -22,7 +22,7 @@ func ToggleNAT(toggle bool) error {
 	}
 
 	f := t.AppendUnique
-	if toggle == Off {
+	if !toggle {
 		f = t.DeleteIfExists
 	}
 

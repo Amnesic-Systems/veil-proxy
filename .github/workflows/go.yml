@@ -11,7 +11,7 @@ on:
 
 jobs:
 
-  build:
+  CI:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
@@ -24,5 +24,10 @@ jobs:
     - name: Build
       run: go build -v ./...
 
+    - name: Staticcheck
+      uses: dominikh/staticcheck-action@v1.3.0
+      with:
+        version: "2022.1.3"
+
     - name: Test
-      run: go test -v ./...
+      run: go test -v -race ./...
