@@ -68,7 +68,7 @@ func TestAToB(t *testing.T) {
 	assertEq(t, err, nil)
 
 	wg.Add(2)
-	go TunToVsock(bytes.NewReader(sendBuf), conn1, ch, &wg)
+	go TunToVsock(io.NopCloser(bytes.NewReader(sendBuf)), conn1, ch, &wg)
 	go VsockToTun(conn2, recvBuf, ch, &wg)
 	wg.Wait()
 

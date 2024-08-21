@@ -18,7 +18,7 @@ const (
 // TCP-over-VSOCK connection. The function keeps on forwarding packets until we
 // encounter an error or EOF. Errors (including EOF) are written to the given
 // channel.
-func TunToVsock(from io.Reader, to io.WriteCloser, ch chan error, wg *sync.WaitGroup) {
+func TunToVsock(from io.ReadCloser, to io.WriteCloser, ch chan error, wg *sync.WaitGroup) {
 	defer to.Close()
 	defer wg.Done()
 	var (
@@ -50,7 +50,7 @@ func TunToVsock(from io.Reader, to io.WriteCloser, ch chan error, wg *sync.WaitG
 // the tun interface. The function keeps on forwarding packets until we
 // encounter an error or EOF. Errors (including EOF) are written to the given
 // channel.
-func VsockToTun(from io.Reader, to io.WriteCloser, ch chan error, wg *sync.WaitGroup) {
+func VsockToTun(from io.ReadCloser, to io.WriteCloser, ch chan error, wg *sync.WaitGroup) {
 	defer to.Close()
 	defer wg.Done()
 	var (
