@@ -33,7 +33,7 @@ func TunToVsock(from io.ReadCloser, to io.WriteCloser, ch chan error, wg *sync.W
 		if nr > 0 {
 			// Forward the network packet to our TCP-over-VSOCK connection.
 			binary.BigEndian.PutUint16(pktLenBuf, uint16(nr))
-			if _, werr := to.Write(append(pktLenBuf, pktBuf[:nr]...)); err != nil {
+			if _, werr := to.Write(append(pktLenBuf, pktBuf[:nr]...)); werr != nil {
 				err = werr
 				break
 			}
