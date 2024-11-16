@@ -106,6 +106,16 @@ func main() {
 		l.Fatalf("Flag -port must be in interval [1, %d].", math.MaxUint32)
 	}
 
+	l.Print("Enabling NAT.")
+	if err := proxy.ToggleNAT(proxy.On); err != nil {
+		l.Fatalf("Error enabling NAT: %v", err)
+	}
+	defer func() {
+		if err := proxy.ToggleNAT(proxy.Off); err != nil {
+			l.Printf("Error disabling NAT: %v", err)
+		}
+	}()
+
 	ln = listenVSOCK(uint32(port))
 	defer ln.Close()
 
