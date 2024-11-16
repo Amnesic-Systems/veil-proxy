@@ -10,13 +10,13 @@ import (
 	"os"
 	"sync"
 
-	proxy "github.com/Amnesic-Systems/nitriding-proxy"
+	proxy "github.com/Amnesic-Systems/veil-proxy"
 	"github.com/mdlayher/vsock"
 )
 
 var l = log.New(
 	os.Stderr,
-	"nitriding-proxy-cmd: ",
+	"veil-proxy-cmd: ",
 	log.Ldate|log.Ltime|log.LUTC|log.Lshortfile,
 )
 
