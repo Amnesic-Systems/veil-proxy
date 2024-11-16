@@ -1,4 +1,4 @@
-module github.com/Amnesic-Systems/nitriding-proxy
+module github.com/Amnesic-Systems/veil-proxy
 
 go 1.21
 

@@ -1,4 +1,4 @@
-prog = nitriding-proxy
+prog = veil-proxy
 deps = cmd/*.go *.go go.mod go.sum Makefile
 
 all: run
