@@ -1,7 +1,7 @@
 prog = veil-proxy
 deps = cmd/*.go *.go go.mod go.sum Makefile
 
-all: run
+all: cap
 
 $(prog): $(deps)
 	go build -C cmd/ -o ../$(prog)
@@ -9,10 +9,6 @@ $(prog): $(deps)
 .PHONY: cap
 cap: $(prog)
 	sudo setcap cap_net_admin=ep $(prog)
-
-.PHONY: run
-run: cap
-	./$(prog)
 
 .PHONY: clean
 clean:
