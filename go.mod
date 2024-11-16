@@ -3,11 +3,11 @@ module github.com/Amnesic-Systems/veil-proxy
 go 1.21
 
 require (
-	github.com/coreos/go-iptables v0.7.0
+	github.com/coreos/go-iptables v0.8.0
 	github.com/mdlayher/vsock v1.2.1
 	github.com/milosgajdos/tenus v0.0.3
 	golang.org/x/net v0.20.0
-	golang.org/x/sys v0.16.0
+	golang.org/x/sys v0.27.0
 )
 
 require (
