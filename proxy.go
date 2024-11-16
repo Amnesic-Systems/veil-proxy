@@ -18,7 +18,7 @@ const (
 // TCP-over-VSOCK connection. The function keeps on forwarding packets until we
 // encounter an error or EOF. Errors (including EOF) are written to the given
 // channel.
-func TunToVsock(from io.Reader, to io.WriteCloser, ch chan error, wg *sync.WaitGroup) {
+func TunToVsock(from io.ReadCloser, to io.WriteCloser, ch chan error, wg *sync.WaitGroup) {
 	defer to.Close()
 	defer wg.Done()
 	var (
@@ -33,7 +33,7 @@ func TunToVsock(from io.Reader, to io.WriteCloser, ch chan error, wg *sync.WaitG
 		if nr > 0 {
 			// Forward the network packet to our TCP-over-VSOCK connection.
 			binary.BigEndian.PutUint16(pktLenBuf, uint16(nr))
-			if _, werr := to.Write(append(pktLenBuf, pktBuf[:nr]...)); err != nil {
+			if _, werr := to.Write(append(pktLenBuf, pktBuf[:nr]...)); werr != nil {
 				err = werr
 				break
 			}
@@ -50,7 +50,7 @@ func TunToVsock(from io.Reader, to io.WriteCloser, ch chan error, wg *sync.WaitG
 // the tun interface. The function keeps on forwarding packets until we
 // encounter an error or EOF. Errors (including EOF) are written to the given
 // channel.
-func VsockToTun(from io.Reader, to io.WriteCloser, ch chan error, wg *sync.WaitGroup) {
+func VsockToTun(from io.ReadCloser, to io.WriteCloser, ch chan error, wg *sync.WaitGroup) {
 	defer to.Close()
 	defer wg.Done()
 	var (
